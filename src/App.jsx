@@ -2,16 +2,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Définitions et Constantes Globales ---
 const PROMO_CODE = "TAR72";
-const BOT_NAME = "TAR72PRONOSTIC";
+const BOT_NAME = "TAR72-Bot";
 
-// Liens affiliés et sociaux
+// Liens affiliés et sociaux - TES LIENS VALIDES
 const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
 const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
 const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
 const MELBET_LINK = "https://melbet.com";
-const ONEXBET_LINK = "https://1xbet.com";
 
-// La route que le client va appeler
+// La route que le client va appeler (cette route sera gérée par la fonction Serverless)
 const API_ROUTE = "/api/chat"; 
 
 // --- LOGIQUE D'INTÉGRATION GEMINI (Via Proxy Serverless) ---
@@ -21,36 +20,32 @@ const getAiResponse = async (userQuery, maxRetries = 5) => {
             const response = await fetch(API_ROUTE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    userQuery,
-                    // On envoie aussi le code promo et les liens pour que le serveur les utilise
-                    promoCode: PROMO_CODE,
-                    links: {
-                        whatsapp: WHATSAPP_LINK,
-                        telegram: TELEGRAM_LINK,
-                        onexbet: ONEXBET_LINK,
-                        melbet: MELBET_LINK,
-                        affiliate: AFFILIATE_LINK
-                    }
-                }) 
+                body: JSON.stringify({ userQuery }) 
             });
 
             if (!response.ok) {
-                throw new Error(`Erreur serveur: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(errorText || `Erreur Serverless: ${response.status} ${response.statusText}`);
             }
 
             const text = await response.text();
-            return text || `Utilise le code ${PROMO_CODE} pour tes inscriptions ! 🎯`;
+            
+            if (text) {
+                return text;
+            } else {
+                throw new Error("Réponse de l'API vide ou mal formée.");
+            }
 
         } catch (error) {
-            console.error("Erreur API:", error);
+            console.error("Tentative API échouée:", error);
             if (attempt === maxRetries - 1) {
-                return `Rejoins-nous sur WhatsApp pour des pronos gratuits: ${WHATSAPP_LINK} Code: ${PROMO_CODE} 🔥`;
+                return `🚨 Erreur de connexion au service IA : ${error.message}. Si vous êtes en local, assurez-vous que votre fonction Serverless (\`/api/chat.js\`) est lancée. Code promo : **${PROMO_CODE}**.`;
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const delay = Math.pow(2, attempt) * 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
-    return `Inscris-toi avec le code ${PROMO_CODE} pour des bonus incroyables ! 🎰`;
+    return `🚨 Erreur interne. Le service IA est temporairement indisponible. Code promo : **${PROMO_CODE}**.`;
 };
 
 // --- Composant Principal de l'Application ---
@@ -58,15 +53,13 @@ const App = () => {
     const [messages, setMessages] = useState([
         { 
             id: 1, 
-            text: `Salut ! Je suis ${BOT_NAME} 👋 Ton assistant pour maximiser tes gains avec le code ${PROMO_CODE} !
+            text: `Bonjour ! Je suis ${BOT_NAME}, votre assistant personnel pour les meilleurs bonus. Mon objectif est simple : vous assurer le **BONUS MAXIMAL** sur 1xBet et Melbet grâce au code **${PROMO_CODE}**. 
 
-🎁 **BONUS EXCLUSIF** : Utilise le code ${PROMO_CODE} pour débloquer des avantages spéciaux sur 1xBet et Melbet !
+Pour rejoindre nos communautés :
+- WhatsApp: ${WHATSAPP_LINK}
+- Telegram: ${TELEGRAM_LINK}
 
-📱 Rejoins nos communautés :
-${WHATSAPP_LINK}
-${TELEGRAM_LINK}
-
-Que veux-tu savoir ? 😊`, 
+Que puis-je faire pour vous aujourd'hui ?`, 
             sender: 'bot', 
             isTyping: false 
         }
@@ -82,32 +75,27 @@ Que veux-tu savoir ? 😊`,
 
     useEffect(scrollToBottom, [messages]);
 
-    // Fonction améliorée pour formater les liens
     const formatMessageText = useCallback((text) => {
-        if (!text) return null;
-
-        // Détection robuste des URLs
-        const urlRegex = /(https?:\/\/[^\s<>"]+[^\s<>".,?!])/g;
+        // Regex améliorée pour mieux détecter les URLs
+        const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
         let parts = text.split(urlRegex);
         const regexBold = /\*\*(.*?)\*\*/g;
 
         return parts.map((part, index) => {
-            // Vérification URL améliorée
+            // Vérification plus robuste des URLs
             if (part.match(/^https?:\/\//)) {
                 const url = part.trim();
+                let display = url.length > 40 ? url.substring(0, 40) + '...' : url;
                 
-                // Identification spécifique des liens
-                let display;
+                // Détection spécifique de vos liens
                 if (url.includes('whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i')) {
-                    display = "💬 WhatsApp - Pronos Gratuits Quotidien";
+                    display = "💬 Rejoindre notre Channel WhatsApp";
                 } else if (url.includes('t.me/+tuopCS5aGEk3ZWZk')) {
-                    display = "📢 Telegram - Communauté Exclusive";
-                } else if (url.includes('1xbet.com') || url.includes('refpa58144')) {
-                    display = "🎰 1xBet - Inscription avec Bonus Max";
-                } else if (url.includes('melbet.com')) {
-                    display = "🎲 MelBet - Meilleures Cotes";
-                } else {
-                    display = "🔗 Lien Important";
+                    display = "📢 Rejoindre notre Groupe Telegram";
+                } else if (url.includes('1xbet') || url.includes('refpa58144')) {
+                    display = "🎰 1xBet - Inscription avec Bonus Max 🚀";
+                } else if (url.includes('melbet')) {
+                    display = "🎲 MelBet - Plateforme de Paris Sportifs 🏆";
                 }
                 
                 return (
@@ -117,14 +105,16 @@ Que veux-tu savoir ? 😊`,
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="link-anchor"
-                        style={{ display: 'block', margin: '8px 0' }}
+                        onClick={(e) => {
+                            console.log("Lien cliqué:", url);
+                            // Le navigateur ouvrira le lien normalement
+                        }}
                     >
                         {display}
                     </a>
                 );
             }
             
-            // Gestion du texte en gras
             const textWithBold = part.split(regexBold).map((subPart, i) => {
                 if (i % 2 === 1) {
                     return <strong key={i} className="promo-code-bold">{subPart}</strong>;
@@ -141,7 +131,6 @@ Que veux-tu savoir ? 😊`,
         const trimmedInput = input.trim();
         if (!trimmedInput) return;
         
-        // Message utilisateur
         const newUserMessage = { 
             id: Date.now(), 
             text: trimmedInput, 
@@ -157,14 +146,12 @@ Que veux-tu savoir ? 😊`,
         try {
             botResponseText = await getAiResponse(trimmedInput);
         } catch (error) {
-            console.error("Erreur:", error);
-            // Réponse de secours avec les liens importants
-            botResponseText = `Inscris-toi avec le code ${PROMO_CODE} pour des bonus incroyables ! 🎰 Fais ton premier dépôt de 5000F ou 10$ pour activer tous les avantages. Rejoins notre WhatsApp: ${WHATSAPP_LINK}`;
+            console.error("Erreur de traitement:", error);
+            botResponseText = "🚨 Une erreur de traitement inattendue est survenue.";
         } finally {
             setIsBotTyping(false);
         }
 
-        // Message bot avec délai pour effet naturel
         setTimeout(() => {
             const newBotMessage = {
                 id: Date.now() + 1,
@@ -173,52 +160,29 @@ Que veux-tu savoir ? 😊`,
                 isTyping: false
             };
             setMessages(prev => [...prev, newBotMessage]);
-        }, 500);
+        }, 300); 
     };
 
-    // Fonction pour les boutons d'action rapide
-    const handleQuickAction = (action) => {
-        let question = "";
-        switch(action) {
-            case 'code':
-                question = "Comment utiliser le code promo TAR72 ?";
-                break;
-            case 'whatsapp':
-                question = "Comment rejoindre le WhatsApp ?";
-                break;
-            case 'inscription':
-                question = "Comment m'inscrire sur 1xBet ?";
-                break;
-            case 'bonus':
-                question = "Quels sont les bonus avec TAR72 ?";
-                break;
-            default:
-                question = action;
-        }
-        
-        setInput(question);
-        // Déclencher l'envoi automatique après un court délai
-        setTimeout(() => {
-            document.querySelector('.chat-button')?.click();
-        }, 100);
-    };
-
-    // Composant de bulle de message
+    // --- Composant d'une Bulle de Message ---
     const MessageBubble = ({ message }) => {
         const isBot = message.sender === 'bot';
         
         return (
             <div className={`message-row ${isBot ? 'bot-row' : 'user-row'}`}>
-                <div className={`message-bubble ${isBot ? 'bot-bubble' : 'user-bubble'}`}>
+                <div 
+                    className={`message-bubble ${isBot ? 'bot-bubble' : 'user-bubble'}`}
+                >
                     {formatMessageText(message.text)}
                 </div>
             </div>
         );
     };
 
+    // --- Rendu de l'interface ---
     return (
         <div className="app-container">
             <style jsx="true">{`
+                /* Reset et base mobile-first */
                 * {
                     box-sizing: border-box;
                     margin: 0;
@@ -252,7 +216,7 @@ Que veux-tu savoir ? 😊`,
                     position: relative;
                 }
 
-                /* Header */
+                /* Header sombre */
                 .chat-header {
                     padding: 15px 20px;
                     background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
@@ -306,7 +270,7 @@ Que veux-tu savoir ? 😊`,
                     white-space: nowrap;
                 }
 
-                /* Bannières */
+                /* Bannières avec dégradés doux */
                 .banner-container {
                     display: flex;
                     gap: 10px;
@@ -334,51 +298,29 @@ Que veux-tu savoir ? 😊`,
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
                 }
 
+                /* Dégradé bleu doux pour 1xBet */
                 .bet-banner-1xbet {
                     background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
                 }
 
+                .bet-banner-1xbet:hover {
+                    background: linear-gradient(135deg, #3da8e8 0%, #2c8fd1 100%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+                }
+
+                /* Dégradé jaune doux pour MelBet */
                 .bet-banner-melbet {
                     background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
                 }
 
-                .bet-banner:hover {
+                .bet-banner-melbet:hover {
+                    background: linear-gradient(135deg, #f4b142 0%, #eb9532 100%);
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
                 }
 
-                /* Quick Actions */
-                .quick-actions {
-                    display: flex;
-                    gap: 8px;
-                    padding: 12px;
-                    background: #2d3748;
-                    border-bottom: 1px solid #4a5568;
-                    flex-wrap: wrap;
-                    flex-shrink: 0;
-                }
-
-                .quick-button {
-                    padding: 8px 12px;
-                    border-radius: 8px;
-                    background: rgba(255, 255, 255, 0.1);
-                    color: #e2e8f0;
-                    border: 1px solid #4a5568;
-                    font-size: 12px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    flex: 1;
-                    min-width: 80px;
-                    text-align: center;
-                }
-
-                .quick-button:hover {
-                    background: rgba(255, 255, 255, 0.2);
-                    transform: translateY(-1px);
-                }
-
-                /* Messages */
+                /* Zone des messages sombre */
                 .messages-area {
                     flex: 1;
                     overflow-y: auto;
@@ -429,6 +371,7 @@ Que veux-tu savoir ? 😊`,
                     color: #f6e05e;
                 }
 
+                /* Style des liens amélioré */
                 .link-anchor {
                     font-size: 14px;
                     font-weight: 600;
@@ -438,19 +381,25 @@ Que veux-tu savoir ? 😊`,
                     padding: 12px 16px;
                     border-radius: 10px;
                     display: block;
-                    margin: 8px 0;
+                    margin: 10px 0;
                     text-align: center;
+                    min-height: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                     transition: all 0.3s ease;
                     box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
                     border: 2px solid transparent;
+                    cursor: pointer;
                 }
 
                 .link-anchor:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(56, 161, 105, 0.5);
+                    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
                 }
 
-                /* Input */
+                /* Input area avec texte visible */
                 .input-form {
                     padding: 15px;
                     border-top: 1px solid #4a5568;
@@ -470,12 +419,18 @@ Que veux-tu savoir ? 😊`,
                     font-size: 16px;
                     min-height: 50px;
                     -webkit-appearance: none;
+                    transition: all 0.3s ease;
                 }
 
                 .chat-input:focus {
                     outline: none;
                     border-color: #4299e1;
+                    background: #ffffff;
                     box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+                }
+
+                .chat-input::placeholder {
+                    color: #718096;
                 }
 
                 .chat-button {
@@ -488,20 +443,25 @@ Que veux-tu savoir ? 😊`,
                     border: none;
                     min-height: 50px;
                     min-width: 80px;
-                    cursor: pointer;
+                    -webkit-appearance: none;
                     transition: all 0.3s ease;
+                    cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
                 }
 
                 .chat-button:hover:not(:disabled) {
                     transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.4);
                 }
 
                 .chat-button:disabled {
                     opacity: 0.6;
                     cursor: not-allowed;
+                    transform: none;
+                    box-shadow: none;
                 }
 
-                /* Typing */
+                /* Typing indicator sombre */
                 .typing-indicator-container {
                     display: flex;
                     justify-content: flex-start;
@@ -526,6 +486,7 @@ Que veux-tu savoir ? 😊`,
                     animation: bounce 1.4s infinite;
                 }
 
+                /* Animations douces */
                 @keyframes pulse {
                     0%, 100% { opacity: 1; }
                     50% { opacity: 0.7; }
@@ -536,8 +497,102 @@ Que veux-tu savoir ? 😊`,
                     40% { transform: scale(1.1); opacity: 1; }
                 }
 
-                /* Responsive */
-                @media (max-width: 768px) {
+                /* Media Queries pour desktop */
+                @media (min-width: 769px) {
+                    .app-container {
+                        padding: 20px;
+                        position: relative;
+                    }
+
+                    .chat-card {
+                        width: 100%;
+                        max-width: 800px;
+                        height: 90vh;
+                        border-radius: 16px;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                    }
+
+                    .chat-header {
+                        padding: 20px;
+                        min-height: 80px;
+                        border-radius: 16px 16px 0 0;
+                        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+                    }
+
+                    .header-title {
+                        font-size: 20px;
+                        font-weight: 600;
+                        color: #e2e8f0;
+                    }
+
+                    .header-subtitle {
+                        font-size: 13px;
+                        background: rgba(246, 224, 94, 0.2);
+                        color: #f6e05e;
+                        padding: 5px 10px;
+                        border-radius: 8px;
+                        border: 1px solid rgba(246, 224, 94, 0.3);
+                    }
+
+                    .banner-container {
+                        padding: 15px;
+                        gap: 12px;
+                        background: #2d3748;
+                    }
+
+                    .bet-banner {
+                        padding: 14px 12px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        border-radius: 10px;
+                    }
+
+                    .bet-banner:hover {
+                        transform: translateY(-2px);
+                    }
+
+                    .messages-area {
+                        padding: 20px;
+                        background: #1a202c;
+                    }
+
+                    .message-bubble {
+                        max-width: 70%;
+                        padding: 16px 20px;
+                        font-size: 15px;
+                        border-radius: 18px;
+                    }
+
+                    .input-form {
+                        padding: 20px;
+                        gap: 12px;
+                        background: #2d3748;
+                        border-top: 1px solid #4a5568;
+                        border-radius: 0 0 16px 16px;
+                    }
+
+                    .chat-input {
+                        padding: 16px 20px;
+                        font-size: 16px;
+                        border-radius: 14px;
+                        background: #ffffff;
+                        color: #2d3748;
+                    }
+
+                    .chat-button {
+                        padding: 16px 24px;
+                        font-size: 16px;
+                        border-radius: 14px;
+                        min-width: 100px;
+                    }
+
+                    .chat-button:hover:not(:disabled) {
+                        transform: translateY(-2px);
+                    }
+                }
+
+                /* Très petits écrans */
+                @media (max-width: 360px) {
                     .chat-header {
                         padding: 12px 15px;
                     }
@@ -546,14 +601,27 @@ Que veux-tu savoir ? 😊`,
                         font-size: 16px;
                     }
 
-                    .quick-actions {
-                        padding: 10px;
-                        gap: 6px;
+                    .header-subtitle {
+                        font-size: 11px;
+                        margin-left: 6px;
+                        padding: 3px 6px;
                     }
 
-                    .quick-button {
-                        font-size: 11px;
-                        padding: 6px 8px;
+                    .banner-container {
+                        padding: 10px;
+                        gap: 8px;
+                        flex-direction: row;
+                        overflow-x: auto;
+                        flex-wrap: nowrap;
+                        justify-content: space-between;
+                    }
+
+                    .bet-banner {
+                        flex: 1;
+                        min-width: 140px;
+                        font-size: 12px;
+                        padding: 10px 8px;
+                        margin: 0;
                     }
 
                     .messages-area {
@@ -574,22 +642,52 @@ Que veux-tu savoir ? 😊`,
                     .chat-input {
                         padding: 12px 14px;
                         font-size: 14px;
+                        min-height: 46px;
+                        background: #ffffff;
+                        color: #2d3748;
+                    }
+
+                    .chat-button {
+                        padding: 12px 16px;
+                        font-size: 14px;
+                        min-height: 46px;
+                        min-width: 70px;
                     }
                 }
 
+                /* Correction pour iOS Safari */
                 @supports (-webkit-touch-callout: none) {
                     .app-container {
                         min-height: -webkit-fill-available;
                     }
+                    
                     .chat-card {
                         height: -webkit-fill-available;
                     }
+                }
+
+                /* Scrollbar personnalisée sombre */
+                .messages-area::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                .messages-area::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+
+                .messages-area::-webkit-scrollbar-thumb {
+                    background: #4a5568;
+                    border-radius: 2px;
+                }
+
+                .messages-area::-webkit-scrollbar-thumb:hover {
+                    background: #718096;
                 }
             `}</style>
 
             <div className="chat-card">
                 
-                {/* Header */}
+                {/* En-tête du Chatbot */}
                 <div className="chat-header">
                     <div className="header-content">
                         <span className={`status-dot ${isBotTyping ? 'typing' : 'idle'}`}></span>
@@ -599,38 +697,23 @@ Que veux-tu savoir ? 😊`,
                     </div>
                 </div>
 
-                {/* Bannières */}
+                {/* Bannières 1xBet et MelBet */}
                 <div className="banner-container">
                     <a href={AFFILIATE_LINK} target="_blank" rel="noopener noreferrer" className="bet-banner bet-banner-1xbet">
-                        🎰 1xBet - Bonus {PROMO_CODE}
+                        🎰 1xBet
                     </a>
                     <a href={MELBET_LINK} target="_blank" rel="noopener noreferrer" className="bet-banner bet-banner-melbet">
-                        🎲 MelBet - Paris Sportifs
+                        🎲 MelBet
                     </a>
                 </div>
 
-                {/* Actions rapides */}
-                <div className="quick-actions">
-                    <button className="quick-button" onClick={() => handleQuickAction('code')}>
-                        📱 Code {PROMO_CODE}
-                    </button>
-                    <button className="quick-button" onClick={() => handleQuickAction('whatsapp')}>
-                        💬 WhatsApp
-                    </button>
-                    <button className="quick-button" onClick={() => handleQuickAction('inscription')}>
-                        🎰 Inscription
-                    </button>
-                    <button className="quick-button" onClick={() => handleQuickAction('bonus')}>
-                        🎁 Bonus
-                    </button>
-                </div>
-
-                {/* Messages */}
+                {/* Zone des Messages */}
                 <div className="messages-area">
                     {messages.map((message) => (
                         <MessageBubble key={message.id} message={message} />
                     ))}
                     
+                    {/* Indicateur de saisie du bot */}
                     {isBotTyping && (
                         <div className="typing-indicator-container">
                             <div className="typing-indicator-dots">
@@ -644,13 +727,13 @@ Que veux-tu savoir ? 😊`,
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input */}
+                {/* Zone de Saisie */}
                 <form onSubmit={handleSend} className="input-form">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="💬 Pose ta question..."
+                        placeholder="💬 Posez votre question..."
                         disabled={isBotTyping} 
                         className="chat-input"
                     />
@@ -659,7 +742,7 @@ Que veux-tu savoir ? 😊`,
                         disabled={!input.trim() || isBotTyping} 
                         className="chat-button"
                     >
-                        {isBotTyping ? '...' : 'Go'}
+                        {isBotTyping ? '...' : 'Envoyer'}
                     </button>
                 </form>
 

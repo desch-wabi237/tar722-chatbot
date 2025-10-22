@@ -1,118 +1,127 @@
-// api/chat.js - Version corrigée
-const fetch = require('node-fetch');
+// api/chat.js
+const fetch = require("node-fetch");
 
 module.exports = async (req, res) => {
-    // 1. Définition des constantes sécurisées
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    const MODEL = 'gemini-2.0-flash-exp'; // Modèle plus stable
-    const PROMO_CODE = "TAR72";
-    const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
-    const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
-    const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
+  // --- CONFIGURATION SÉCURISÉE ---
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const MODEL = "gemini-2.0-flash-exp";
+  const PROMO_CODE = "TAR72";
 
-    // 2. Gestion CORS
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    // Gérer les requêtes OPTIONS pour CORS
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+  const AFFILIATE_1XBET = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
+  const AFFILIATE_MELBET = "https://melbet.com";
+  const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
+  const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
+
+  // --- CORS ---
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  if (!GEMINI_API_KEY) {
+    console.error("❌ Clé API Gemini manquante !");
+    return res.status(500).json({ error: "Configuration serveur incomplète" });
+  }
+
+  // --- LECTURE DE LA REQUÊTE UTILISATEUR ---
+  let userQuery;
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    userQuery = body.userQuery?.trim();
+    if (!userQuery) {
+      return res.status(400).json({ error: "Requête invalide" });
+    }
+  } catch (err) {
+    console.error("❌ Erreur de parsing:", err);
+    return res.status(400).json({ error: "Format JSON invalide" });
+  }
+
+  // --- PROMPT IA PRINCIPAL ---
+  const SYSTEM_PROMPT = `
+Vous êtes un assistant amical appelé TAR72-BOT. 
+Votre mission est d’aider les utilisateurs à profiter du **code promo ${PROMO_CODE}** 
+pour obtenir des bonus exclusifs sur **1xBet** et **Melbet**.
+
+⚙️ **Règles :**
+- Répondez toujours en **3 phrases maximum**.
+- Utilisez la **langue de l'utilisateur automatiquement** (français, anglais, espagnol, etc.).
+- Soyez **naturel, amical, motivant mais crédible**.
+- Mentionnez toujours :
+  - Le code promo **${PROMO_CODE}** (obligatoire pour activer les bonus).
+  - L’importance du premier dépôt de **5000F ou 10$**.
+  - Les liens suivants :
+    - 📱 Chaîne WhatsApp : ${WHATSAPP_LINK}
+    - 📢 Canal Telegram : ${TELEGRAM_LINK}
+    - 🎰 1xBet : ${AFFILIATE_1XBET}
+    - 🎯 Melbet : ${AFFILIATE_MELBET}
+
+🔑 Détail important :
+Le code **${PROMO_CODE}** est **obligatoire** pour télécharger les coupons premium (grosses cotes et scores exacts).
+
+Répondez de manière **courte, fluide et humaine**, comme un ami qui aide un autre à profiter d’un bon plan.
+`;
+
+  // --- CORPS DE LA REQUÊTE GEMINI ---
+  const payload = {
+    contents: [
+      {
+        parts: [
+          {
+            text: `${SYSTEM_PROMPT}\n\nQuestion de l'utilisateur : ${userQuery}`,
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: 512,
+    },
+  };
+
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+  try {
+    console.log("🔄 Appel Gemini API...");
+    const geminiResponse = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const responseData = await geminiResponse.json();
+
+    if (!geminiResponse.ok) {
+      console.error("❌ Erreur Gemini:", responseData);
+      return res.status(geminiResponse.status).json({
+        error: responseData.error?.message || "Erreur API Gemini",
+      });
     }
 
-    // 3. Vérification de la méthode
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
+    const text = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      console.error("⚠️ Réponse vide de Gemini:", responseData);
+      return res.status(500).json({ error: "Réponse IA vide" });
     }
 
-    // 4. Vérification de la clé API
-    if (!GEMINI_API_KEY) {
-        console.error("❌ Clé API Gemini manquante dans les variables d'environnement");
-        return res.status(500).json({ error: "Configuration serveur manquante" });
-    }
-
-    // 5. Extraction de la requête utilisateur
-    let userQuery;
-    try {
-        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-        userQuery = body.userQuery;
-        
-        if (!userQuery || typeof userQuery !== 'string') {
-            return res.status(400).json({ error: 'Requête utilisateur invalide' });
-        }
-    } catch (error) {
-        console.error("❌ Erreur de parsing du corps:", error);
-        return res.status(400).json({ error: 'Format de requête invalide' });
-    }
-
-    // 6. Prompt système
-    const SYSTEM_PROMPT = `Vous êtes TAR72PRONOSTIC, un agent promotionnel expert de 1xBet et Melbet. Votre mission est de convaincre l'utilisateur d'utiliser le code promo **${PROMO_CODE}** lors de son inscription pour obtenir le meilleur bonus.
-
-Répondez de manière engageante, informative et courte (2-3 phrases maximum). Toujours inclure le code promo **${PROMO_CODE}** dans votre réponse. 
-
-Liens importants :
-- Inscription : ${AFFILIATE_LINK}
-- WhatsApp : ${WHATSAPP_LINK}  
-- Telegram : ${TELEGRAM_LINK}
-
-Utilisez le format Markdown pour mettre en gras le code promo.`;
-
-    // 7. Construction du payload Gemini
-    const payload = {
-        contents: [{
-            parts: [{
-                text: SYSTEM_PROMPT + `\n\nQuestion de l'utilisateur: ${userQuery}`
-            }]
-        }],
-        generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-        }
-    };
-
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-    try {
-        console.log("🔄 Appel à l'API Gemini...");
-        
-        const geminiResponse = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const responseData = await geminiResponse.json();
-
-        if (!geminiResponse.ok) {
-            console.error("❌ Erreur Gemini API:", responseData);
-            return res.status(geminiResponse.status).json({ 
-                error: responseData.error?.message || 'Erreur API Gemini' 
-            });
-        }
-
-        const text = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!text) {
-            console.error("❌ Réponse vide de Gemini:", responseData);
-            return res.status(500).json({ error: "Réponse IA vide" });
-        }
-
-        console.log("✅ Réponse Gemini reçue avec succès");
-        
-        // 8. Renvoyer la réponse
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(text);
-
-    } catch (error) {
-        console.error("💥 Erreur serveur:", error);
-        return res.status(500).json({ 
-            error: "Erreur interne du serveur",
-            details: error.message 
-        });
-    }
+    console.log("✅ Réponse Gemini OK");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.status(200).send(text);
+  } catch (error) {
+    console.error("💥 Erreur serveur:", error);
+    res.status(500).json({
+      error: "Erreur interne du serveur",
+      details: error.message,
+    });
+  }
 };

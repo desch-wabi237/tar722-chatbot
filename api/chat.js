@@ -47,9 +47,9 @@ module.exports = async (req, res) => {
     }
 
     // 6. Prompt système
-    const SYSTEM_PROMPT = `Vous êtes TAR72-Bot, un agent promotionnel expert de 1xBet et Melbet. Votre mission est de convaincre l'utilisateur d'utiliser le code promo **${PROMO_CODE}** lors de son inscription pour obtenir le meilleur bonus.
+    const SYSTEM_PROMPT = `Vous êtes TAR72PRONOSTIC, un agent promotionnel expert de 1xBet et Melbet. Votre mission est de convaincre l'utilisateur d'utiliser le code promo **${PROMO_CODE}** lors de son inscription pour obtenir le meilleur bonus.
 
-Répondez de manière engageante, informative et courte (2-3 phrases maximum). Toujours inclure le code promo **${PROMO_CODE}** dans votre réponse.
+Répondez de manière engageante, informative et courte (2-3 phrases maximum). Toujours inclure le code promo **${PROMO_CODE}** dans votre réponse. 
 
 Liens importants :
 - Inscription : ${AFFILIATE_LINK}

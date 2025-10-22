@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Définitions et Constantes Globales ---
 const PROMO_CODE = "TAR72";
-const BOT_NAME = "TAR72PRONOSTIC";
+const BOT_NAME = "TAR72-Bot";
 
 // Liens affiliés et sociaux
 const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
@@ -382,7 +382,7 @@ const App = () => {
                     box-shadow: 0 4px 12px rgba(56, 161, 105, 0.4);
                 }
 
-                /* Input area sombre */
+                /* CORRECTION : Input area avec texte visible */
                 .input-form {
                     padding: 15px;
                     border-top: 1px solid #4a5568;
@@ -397,8 +397,8 @@ const App = () => {
                     padding: 14px 16px;
                     border-radius: 12px;
                     border: 1px solid #4a5568;
-                    background: #4a5568;
-                    color: #e2e8f0;
+                    background: #ffffff; /* Fond blanc pour voir le texte */
+                    color: #2d3748; /* Texte foncé pour contraste */
                     font-size: 16px;
                     min-height: 50px;
                     -webkit-appearance: none;
@@ -408,12 +408,12 @@ const App = () => {
                 .chat-input:focus {
                     outline: none;
                     border-color: #4299e1;
-                    background: #4a5568;
+                    background: #ffffff;
                     box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
                 }
 
                 .chat-input::placeholder {
-                    color: #a0aec0;
+                    color: #718096; /* Placeholder gris */
                 }
 
                 .chat-button {
@@ -558,6 +558,8 @@ const App = () => {
                         padding: 16px 20px;
                         font-size: 16px;
                         border-radius: 14px;
+                        background: #ffffff;
+                        color: #2d3748;
                     }
 
                     .chat-button {
@@ -591,8 +593,8 @@ const App = () => {
                     .banner-container {
                         padding: 10px;
                         gap: 8px;
-                    flex-direction: row;
-                    overflow-x: auto;
+                        flex-direction: row;
+                        overflow-x: auto;
                         flex-wrap: nowrap;
                         justify-content: space-between;
                     }
@@ -624,6 +626,8 @@ const App = () => {
                         padding: 12px 14px;
                         font-size: 14px;
                         min-height: 46px;
+                        background: #ffffff;
+                        color: #2d3748;
                     }
 
                     .chat-button {
@@ -706,12 +710,12 @@ const App = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Zone de Saisie */}
+                {/* Zone de Saisie - MAINTENANT VISIBLE */}
                 <form onSubmit={handleSend} className="input-form">
                     <input
                         type="text"
                         value={input}
-                        onChange={(e) => setInput(e.value)}
+                        onChange={(e) => setInput(e.target.value)}
                         placeholder="💬 Posez votre question..."
                         disabled={isBotTyping} 
                         className="chat-input"

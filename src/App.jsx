@@ -2,43 +2,32 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Définitions et Constantes Globales ---
 const PROMO_CODE = "TAR72";
-const BOT_NAME = "TAR72-Bot";
+const BOT_NAME = "TAR72PRONOSTIC";
 
 // Liens affiliés et sociaux
 const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
 const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
 const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
+const MELBET_LINK = "https://melbet.com";
 
 // La route que le client va appeler (cette route sera gérée par la fonction Serverless)
 const API_ROUTE = "/api/chat"; 
-// Note : La clé API n'est PLUS lue ici. Elle est stockée en toute sécurité sur le serveur.
-
 
 // --- LOGIQUE D'INTÉGRATION GEMINI (Via Proxy Serverless) ---
-
-/**
- * Appelle la route API Serverless locale pour obtenir la réponse de l'IA.
- */
 const getAiResponse = async (userQuery, maxRetries = 5) => {
-    
-    // Le prompt système sera géré côté serveur pour des raisons de sécurité et de simplicité.
-    
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch(API_ROUTE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Nous envoyons simplement la requête de l'utilisateur au serveur
                 body: JSON.stringify({ userQuery }) 
             });
 
             if (!response.ok) {
-                // Si le serveur (ou la fonction serverless) renvoie une erreur
                 const errorText = await response.text();
                 throw new Error(errorText || `Erreur Serverless: ${response.status} ${response.statusText}`);
             }
 
-            // Le serveur doit renvoyer le texte brut de la réponse de l'IA
             const text = await response.text();
             
             if (text) {
@@ -50,7 +39,6 @@ const getAiResponse = async (userQuery, maxRetries = 5) => {
         } catch (error) {
             console.error("Tentative API échouée:", error);
             if (attempt === maxRetries - 1) {
-                // Message d'erreur standard après échec de toutes les tentatives
                 return `🚨 Erreur de connexion au service IA : ${error.message}. Si vous êtes en local, assurez-vous que votre fonction Serverless (\`/api/chat.js\`) est lancée. Code promo : **${PROMO_CODE}**.`;
             }
             const delay = Math.pow(2, attempt) * 1000;
@@ -59,7 +47,6 @@ const getAiResponse = async (userQuery, maxRetries = 5) => {
     }
     return `🚨 Erreur interne. Le service IA est temporairement indisponible. Code promo : **${PROMO_CODE}**.`;
 };
-
 
 // --- Composant Principal de l'Application ---
 const App = () => {
@@ -83,16 +70,24 @@ const App = () => {
     useEffect(scrollToBottom, [messages]);
 
     const formatMessageText = useCallback((text) => {
-        let parts = text.split(/(\s(https?:\/\/[^\s]+))/g);
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        let parts = text.split(urlRegex);
         const regexBold = /\*\*(.*?)\*\*/g;
 
         return parts.map((part, index) => {
-            if (part.startsWith(' https://') || part.startsWith('https://')) {
+            if (urlRegex.test(part)) {
                 const url = part.trim();
                 let display = url.length > 50 ? url.substring(0, 50) + '...' : url;
-                if (url === AFFILIATE_LINK) display = "Lien d'Inscription 🚀";
-                if (url === WHATSAPP_LINK) display = "Chaîne WhatsApp 💬";
-                if (url === TELEGRAM_LINK) display = "Canal Telegram 📢";
+                
+                if (url.includes('1xbet') || url.includes('refpa58144')) {
+                    display = "🎰 1xBet - Inscription avec Bonus Max 🚀";
+                } else if (url.includes('melbet')) {
+                    display = "🎲 MelBet - Plateforme de Paris Sportifs 🏆";
+                } else if (url.includes('whatsapp')) {
+                    display = "💬 Rejoindre notre WhatsApp";
+                } else if (url.includes('telegram') || url.includes('t.me')) {
+                    display = "📢 Rejoindre notre Telegram";
+                }
                 
                 return (
                     <a 
@@ -173,283 +168,499 @@ const App = () => {
     // --- Rendu de l'interface ---
     return (
         <div className="app-container">
-            {/* Styles CSS Purs Intégrés */}
             <style jsx="true">{`
-                /* Variables de couleurs */
-                :root {
-                    --color-primary: #f59e0b; /* Jaune/Or */
-                    --color-secondary: #10b981; /* Vert */
-                    --color-background: #111827; /* Noir/Sombre */
-                    --color-card: #1f2937; /* Gris foncé */
-                    --color-bot-bubble: #374151; /* Bulle Bot */
-                    --color-user-bubble: #2563eb; /* Bulle User (Bleu) */
-                    --color-text-light: #f9fafb;
-                    --color-promo-code: #facc15; /* Jaune vif pour le code promo */
-                    --color-button-text: #111827;
+                /* Reset et base mobile-first */
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
                 }
 
-                /* Styles globaux */
                 .app-container {
                     min-height: 100vh;
-                    background-color: var(--color-background);
+                    min-height: 100dvh;
+                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding: 16px;
-                    font-family: sans-serif;
-                    position: relative;
+                    padding: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    width: 100%;
                 }
                 
                 .chat-card {
                     width: 100%;
-                    max-width: 1024px; /* max-w-4xl */
-                    height: 90vh;
+                    height: 100%;
                     display: flex;
                     flex-direction: column;
-                    border-radius: 16px; /* rounded-2xl */
-                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); /* shadow-2xl */
-                    background-color: rgba(31, 41, 55, 0.8); /* bg-gray-800/80 */
+                    background: #1a202c;
                     overflow: hidden;
-                    border: 1px solid #374151; /* border-gray-700 */
+                    position: relative;
                 }
 
-                /* Header */
+                /* Header sombre */
                 .chat-header {
-                    padding: 16px;
-                    background-color: var(--color-background);
-                    border-bottom: 1px solid #374151;
+                    padding: 15px 20px;
+                    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+                    border-bottom: 1px solid #4a5568;
                     display: flex;
                     align-items: center;
-                    justify-content: space-between;
-                }
-                .status-dot {
-                    height: 12px;
-                    width: 12px;
-                    border-radius: 50%;
-                    margin-right: 12px;
-                    transition: background-color 0.3s;
-                }
-                .status-dot.typing {
-                    background-color: var(--color-secondary);
-                    animation: pulse 1.5s infinite;
-                }
-                .status-dot.idle {
-                    background-color: #6b7280; /* gray-500 */
-                }
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.5; }
-                }
-                .header-title {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: var(--color-text-light);
-                }
-                .header-subtitle {
-                    font-size: 14px;
-                    font-weight: normal;
-                    color: var(--color-promo-code);
-                    margin-left: 8px;
-                }
-                .register-button {
-                    padding: 4px 12px;
-                    font-size: 14px;
-                    font-weight: 600;
-                    border-radius: 9999px; /* rounded-full */
-                    transition: all 0.3s;
-                    background-color: var(--color-primary);
-                    color: var(--color-button-text);
-                    text-decoration: none;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                }
-                .register-button:hover {
-                    background-color: #fcd34d; /* yellow-400 */
+                    justify-content: center;
+                    min-height: 70px;
+                    flex-shrink: 0;
                 }
 
-                /* Messages Area */
+                .header-content {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .status-dot {
+                    height: 10px;
+                    width: 10px;
+                    border-radius: 50%;
+                    margin-right: 12px;
+                    flex-shrink: 0;
+                    background-color: #68d391;
+                }
+
+                .status-dot.typing {
+                    background-color: #68d391;
+                    animation: pulse 1.5s infinite;
+                }
+
+                .header-title {
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #e2e8f0;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .header-subtitle {
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: #f6e05e;
+                    background: rgba(246, 224, 94, 0.15);
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    margin-left: 8px;
+                    white-space: nowrap;
+                }
+
+                /* Bannières avec dégradés doux */
+                .banner-container {
+                    display: flex;
+                    gap: 10px;
+                    padding: 12px;
+                    background: #2d3748;
+                    border-bottom: 1px solid #4a5568;
+                    flex-shrink: 0;
+                }
+
+                .bet-banner {
+                    flex: 1;
+                    padding: 12px 8px;
+                    border-radius: 10px;
+                    text-align: center;
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 13px;
+                    transition: all 0.3s ease;
+                    min-height: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: none;
+                    color: white;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                }
+
+                /* Dégradé bleu doux pour 1xBet */
+                .bet-banner-1xbet {
+                    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                }
+
+                .bet-banner-1xbet:hover {
+                    background: linear-gradient(135deg, #3da8e8 0%, #2c8fd1 100%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+                }
+
+                /* Dégradé jaune doux pour MelBet */
+                .bet-banner-melbet {
+                    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+                }
+
+                .bet-banner-melbet:hover {
+                    background: linear-gradient(135deg, #f4b142 0%, #eb9532 100%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+                }
+
+                /* Zone des messages sombre */
                 .messages-area {
                     flex: 1;
                     overflow-y: auto;
-                    padding: 16px;
+                    padding: 15px;
                     display: flex;
                     flex-direction: column;
-                    gap: 16px;
+                    gap: 12px;
+                    background: #1a202c;
+                    -webkit-overflow-scrolling: touch;
                 }
-                
-                /* Message Rows */
+
                 .message-row {
                     display: flex;
-                    margin-bottom: 16px;
+                    margin-bottom: 12px;
                 }
+
                 .bot-row {
                     justify-content: flex-start;
                 }
+
                 .user-row {
                     justify-content: flex-end;
                 }
 
-                /* Message Bubble */
                 .message-bubble {
-                    max-width: 80%; /* max-w-xl (adapté au CSS) */
-                    padding: 16px;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-                    transition: all 0.3s ease-out;
-                    font-size: 16px;
+                    max-width: 85%;
+                    padding: 14px 16px;
+                    border-radius: 16px;
+                    font-size: 15px;
+                    line-height: 1.4;
                     word-wrap: break-word;
-                    color: var(--color-text-light);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
                 }
-                
+
                 .bot-bubble {
-                    background-color: var(--color-bot-bubble);
-                    border-bottom-left-radius: 0;
+                    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+                    border: 1px solid #4a5568;
+                    color: #e2e8f0;
                 }
-                
+
                 .user-bubble {
-                    background-color: var(--color-user-bubble);
-                    border-bottom-right-radius: 0;
+                    background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+                    color: white;
                 }
 
                 .promo-code-bold {
-                    font-weight: 800;
-                    color: var(--color-promo-code);
+                    font-weight: 700;
+                    color: #f6e05e;
                 }
-                
+
                 .link-anchor {
                     font-size: 14px;
                     font-weight: 600;
                     text-decoration: none;
-                    color: #4ade80; /* green-300 */
-                    background-color: rgba(16, 185, 129, 0.3);
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    display: inline-block;
-                    margin: 4px 0;
-                    transition: color 0.2s;
+                    color: white;
+                    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+                    padding: 10px 14px;
+                    border-radius: 8px;
+                    display: block;
+                    margin: 8px 0;
+                    text-align: center;
+                    min-height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
                 }
+
                 .link-anchor:hover {
-                    text-decoration: underline;
-                    color: #f59e0b;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.4);
                 }
 
+                /* Input area sombre */
+                .input-form {
+                    padding: 15px;
+                    border-top: 1px solid #4a5568;
+                    display: flex;
+                    background: #2d3748;
+                    gap: 10px;
+                    flex-shrink: 0;
+                }
 
-                /* Typing Indicator */
+                .chat-input {
+                    flex: 1;
+                    padding: 14px 16px;
+                    border-radius: 12px;
+                    border: 1px solid #4a5568;
+                    background: #4a5568;
+                    color: #e2e8f0;
+                    font-size: 16px;
+                    min-height: 50px;
+                    -webkit-appearance: none;
+                    transition: all 0.3s ease;
+                }
+
+                .chat-input:focus {
+                    outline: none;
+                    border-color: #4299e1;
+                    background: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+                }
+
+                .chat-input::placeholder {
+                    color: #a0aec0;
+                }
+
+                .chat-button {
+                    padding: 14px 20px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    font-size: 16px;
+                    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+                    color: white;
+                    border: none;
+                    min-height: 50px;
+                    min-width: 80px;
+                    -webkit-appearance: none;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
+                }
+
+                .chat-button:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.4);
+                }
+
+                .chat-button:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    transform: none;
+                    box-shadow: none;
+                }
+
+                /* Typing indicator sombre */
                 .typing-indicator-container {
                     display: flex;
                     justify-content: flex-start;
-                    margin-bottom: 16px;
+                    margin-bottom: 12px;
                 }
+
                 .typing-indicator-dots {
-                    padding: 12px;
-                    border-radius: 12px;
-                    background-color: var(--color-bot-bubble);
-                    border-bottom-left-radius: 0;
+                    padding: 12px 16px;
+                    border-radius: 16px;
+                    background: #2d3748;
+                    border: 1px solid #4a5568;
                     display: flex;
                     align-items: center;
-                    gap: 4px;
+                    gap: 5px;
                 }
+
                 .dot {
                     height: 8px;
                     width: 8px;
-                    background-color: var(--color-promo-code);
+                    background: #68d391;
                     border-radius: 50%;
                     animation: bounce 1.4s infinite;
                 }
-                .dot:nth-child(2) { animation-delay: 0.1s; }
-                .dot:nth-child(3) { animation-delay: 0.2s; }
+
+                /* Animations douces */
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                }
+
                 @keyframes bounce {
-                    0%, 80%, 100% { transform: scale(0); }
-                    40% { transform: scale(1); }
+                    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+                    40% { transform: scale(1.1); opacity: 1; }
                 }
 
-                /* Input Area */
-                .input-form {
-                    padding: 16px;
-                    border-top: 1px solid #374151;
-                    display: flex;
-                    background-color: var(--color-card);
-                }
-                .chat-input {
-                    flex: 1;
-                    padding: 12px;
-                    margin-right: 12px;
-                    border-radius: 12px;
-                    border: 1px solid #4b5563; /* gray-600 */
-                    background-color: #374151; /* gray-700 */
-                    color: var(--color-text-light);
-                    font-size: 16px;
-                    outline: none;
-                    transition: all 0.2s;
-                }
-                .chat-input:focus {
-                    border-color: var(--color-primary);
-                    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
-                }
-                .chat-button {
-                    padding: 12px 24px;
-                    border-radius: 12px;
-                    font-weight: 600;
-                    transition: all 0.2s;
-                    background-color: var(--color-primary);
-                    color: var(--color-button-text);
-                    border: none;
-                }
-                .chat-button:hover:not(:disabled) {
-                    background-color: #fcd34d;
-                }
-                .chat-button:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
+                /* Media Queries pour desktop */
+                @media (min-width: 769px) {
+                    .app-container {
+                        padding: 20px;
+                        position: relative;
+                    }
 
-                /* Footer (Pied de page) */
-                .footer-links {
-                    position: absolute;
-                    bottom: 8px;
-                    right: 16px;
-                    font-size: 12px;
-                    color: #6b7280;
-                    display: flex;
-                    gap: 12px;
-                }
-                .footer-links a {
-                    color: inherit;
-                    text-decoration: none;
-                    transition: color 0.2s;
-                }
-                .footer-links a:hover {
-                    color: var(--color-secondary);
-                }
-                .footer-links a.telegram:hover {
-                    color: #60a5fa; /* blue-400 */
-                }
-                .footer-links a.whatsapp:hover {
-                    color: #10b981; /* green-500 */
-                }
-
-                /* Media Queries pour le Responsive Design */
-                @media (max-width: 768px) {
                     .chat-card {
-                        height: 95vh;
-                        border-radius: 0;
-                        max-width: 100%;
+                        width: 100%;
+                        max-width: 800px;
+                        height: 90vh;
+                        border-radius: 16px;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
                     }
-                    .message-bubble {
-                        max-width: 90%;
-                        font-size: 15px;
-                    }
+
                     .chat-header {
+                        padding: 20px;
+                        min-height: 80px;
+                        border-radius: 16px 16px 0 0;
+                        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+                    }
+
+                    .header-title {
+                        font-size: 20px;
+                        font-weight: 600;
+                        color: #e2e8f0;
+                    }
+
+                    .header-subtitle {
+                        font-size: 13px;
+                        background: rgba(246, 224, 94, 0.2);
+                        color: #f6e05e;
+                        padding: 5px 10px;
+                        border-radius: 8px;
+                        border: 1px solid rgba(246, 224, 94, 0.3);
+                    }
+
+                    .banner-container {
+                        padding: 15px;
+                        gap: 12px;
+                        background: #2d3748;
+                    }
+
+                    .bet-banner {
+                        padding: 14px 12px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        border-radius: 10px;
+                    }
+
+                    .bet-banner:hover {
+                        transform: translateY(-2px);
+                    }
+
+                    .messages-area {
+                        padding: 20px;
+                        background: #1a202c;
+                    }
+
+                    .message-bubble {
+                        max-width: 70%;
+                        padding: 16px 20px;
+                        font-size: 15px;
+                        border-radius: 18px;
+                    }
+
+                    .input-form {
+                        padding: 20px;
+                        gap: 12px;
+                        background: #2d3748;
+                        border-top: 1px solid #4a5568;
+                        border-radius: 0 0 16px 16px;
+                    }
+
+                    .chat-input {
+                        padding: 16px 20px;
+                        font-size: 16px;
+                        border-radius: 14px;
+                    }
+
+                    .chat-button {
+                        padding: 16px 24px;
+                        font-size: 16px;
+                        border-radius: 14px;
+                        min-width: 100px;
+                    }
+
+                    .chat-button:hover:not(:disabled) {
+                        transform: translateY(-2px);
+                    }
+                }
+
+                /* Très petits écrans */
+                @media (max-width: 360px) {
+                    .chat-header {
+                        padding: 12px 15px;
+                    }
+
+                    .header-title {
+                        font-size: 16px;
+                    }
+
+                    .header-subtitle {
+                        font-size: 11px;
+                        margin-left: 6px;
+                        padding: 3px 6px;
+                    }
+
+                    .banner-container {
+                        padding: 10px;
+                        gap: 8px;
+                    flex-direction: row;
+                    overflow-x: auto;
+                        flex-wrap: nowrap;
+                        justify-content: space-between;
+                    }
+
+                    .bet-banner {
+                        flex: 1;
+                        min-width: 140px;
+                        font-size: 12px;
+                        padding: 10px 8px;
+                        margin: 0;
+                    }
+
+                    .messages-area {
                         padding: 12px;
                     }
-                    .header-title {
-                        font-size: 18px;
+
+                    .message-bubble {
+                        max-width: 90%;
+                        padding: 12px 14px;
+                        font-size: 14px;
                     }
-                    .header-subtitle {
-                        display: none; /* Cache le sous-titre sur mobile pour gagner de la place */
+
+                    .input-form {
+                        padding: 12px;
+                        gap: 8px;
                     }
-                    .register-button {
-                        padding: 4px 8px;
+
+                    .chat-input {
+                        padding: 12px 14px;
+                        font-size: 14px;
+                        min-height: 46px;
                     }
+
+                    .chat-button {
+                        padding: 12px 16px;
+                        font-size: 14px;
+                        min-height: 46px;
+                        min-width: 70px;
+                    }
+                }
+
+                /* Correction pour iOS Safari */
+                @supports (-webkit-touch-callout: none) {
+                    .app-container {
+                        min-height: -webkit-fill-available;
+                    }
+                    
+                    .chat-card {
+                        height: -webkit-fill-available;
+                    }
+                }
+
+                /* Scrollbar personnalisée sombre */
+                .messages-area::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                .messages-area::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+
+                .messages-area::-webkit-scrollbar-thumb {
+                    background: #4a5568;
+                    border-radius: 2px;
+                }
+
+                .messages-area::-webkit-scrollbar-thumb:hover {
+                    background: #718096;
                 }
             `}</style>
 
@@ -457,19 +668,21 @@ const App = () => {
                 
                 {/* En-tête du Chatbot */}
                 <div className="chat-header">
-                    <div className="flex items-center" style={{ display: 'flex', alignItems: 'center' }}>
+                    <div className="header-content">
                         <span className={`status-dot ${isBotTyping ? 'typing' : 'idle'}`}></span>
                         <h1 className="header-title">
-                            {BOT_NAME} <span className="header-subtitle">| Code Promo: {PROMO_CODE}</span>
+                            {BOT_NAME} <span className="header-subtitle">Code: {PROMO_CODE}</span>
                         </h1>
                     </div>
-                    <a 
-                        href={AFFILIATE_LINK} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="register-button"
-                    >
-                        S'inscrire ({PROMO_CODE})
+                </div>
+
+                {/* Bannières 1xBet et MelBet avec nouveaux dégradés */}
+                <div className="banner-container">
+                    <a href={AFFILIATE_LINK} target="_blank" rel="noopener noreferrer" className="bet-banner bet-banner-1xbet">
+                        🎰 1xBet
+                    </a>
+                    <a href={MELBET_LINK} target="_blank" rel="noopener noreferrer" className="bet-banner bet-banner-melbet">
+                        🎲 MelBet
                     </a>
                 </div>
 
@@ -490,7 +703,7 @@ const App = () => {
                         </div>
                     )}
                     
-                    <div ref={messagesEndRef} /> {/* Ancre pour le défilement */}
+                    <div ref={messagesEndRef} />
                 </div>
 
                 {/* Zone de Saisie */}
@@ -498,8 +711,8 @@ const App = () => {
                     <input
                         type="text"
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Posez votre question ou demandez le code promo..."
+                        onChange={(e) => setInput(e.value)}
+                        placeholder="💬 Posez votre question..."
                         disabled={isBotTyping} 
                         className="chat-input"
                     />
@@ -508,21 +721,10 @@ const App = () => {
                         disabled={!input.trim() || isBotTyping} 
                         className="chat-button"
                     >
-                        Envoyer
+                        {isBotTyping ? '...' : 'Envoyer'}
                     </button>
                 </form>
 
-            </div>
-            
-            {/* Pied de page informatif et liens sociaux */}
-            <div className="footer-links">
-                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="whatsapp">
-                    💬 WhatsApp
-                </a>
-                <a href={TELEGRAM_LINK} target="_blank" rel="noopener noreferrer" className="telegram">
-                    📢 Telegram
-                </a>
-                <span>| Code {PROMO_CODE}</span>
             </div>
             
         </div>

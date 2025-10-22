@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Définitions et Constantes Globales ---
 const PROMO_CODE = "TAR72";
-const BOT_NAME = "TAR72PRONOSTIC.";
+const BOT_NAME = "TAR72-Bot";
 
-// Liens affiliés et sociaux
+// Liens affiliés et sociaux - TES LIENS VALIDES
 const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
 const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
 const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
@@ -53,7 +53,13 @@ const App = () => {
     const [messages, setMessages] = useState([
         { 
             id: 1, 
-            text: `Bonjour ! Je suis ${BOT_NAME}, votre assistant personnel pour les meilleurs bonus. Mon objectif est simple : vous assurer le **BONUS MAXIMAL** sur 1xBet et Melbet grâce au code **${PROMO_CODE}**. Que puis-je faire pour vous aujourd'hui ?`, 
+            text: `Bonjour ! Je suis ${BOT_NAME}, votre assistant personnel pour les meilleurs bonus. Mon objectif est simple : vous assurer le **BONUS MAXIMAL** sur 1xBet et Melbet grâce au code **${PROMO_CODE}**. 
+
+Pour rejoindre nos communautés :
+- WhatsApp: ${WHATSAPP_LINK}
+- Telegram: ${TELEGRAM_LINK}
+
+Que puis-je faire pour vous aujourd'hui ?`, 
             sender: 'bot', 
             isTyping: false 
         }
@@ -70,23 +76,26 @@ const App = () => {
     useEffect(scrollToBottom, [messages]);
 
     const formatMessageText = useCallback((text) => {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        // Regex améliorée pour mieux détecter les URLs
+        const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
         let parts = text.split(urlRegex);
         const regexBold = /\*\*(.*?)\*\*/g;
 
         return parts.map((part, index) => {
-            if (urlRegex.test(part)) {
+            // Vérification plus robuste des URLs
+            if (part.match(/^https?:\/\//)) {
                 const url = part.trim();
-                let display = url.length > 50 ? url.substring(0, 50) + '...' : url;
+                let display = url.length > 40 ? url.substring(0, 40) + '...' : url;
                 
-                if (url.includes('1xbet') || url.includes('refpa58144')) {
+                // Détection spécifique de vos liens
+                if (url.includes('whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i')) {
+                    display = "💬 Rejoindre notre Channel WhatsApp";
+                } else if (url.includes('t.me/+tuopCS5aGEk3ZWZk')) {
+                    display = "📢 Rejoindre notre Groupe Telegram";
+                } else if (url.includes('1xbet') || url.includes('refpa58144')) {
                     display = "🎰 1xBet - Inscription avec Bonus Max 🚀";
                 } else if (url.includes('melbet')) {
                     display = "🎲 MelBet - Plateforme de Paris Sportifs 🏆";
-                } else if (url.includes('whatsapp')) {
-                    display = "💬 Rejoindre notre WhatsApp";
-                } else if (url.includes('telegram') || url.includes('t.me')) {
-                    display = "📢 Rejoindre notre Telegram";
                 }
                 
                 return (
@@ -96,6 +105,10 @@ const App = () => {
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="link-anchor"
+                        onClick={(e) => {
+                            console.log("Lien cliqué:", url);
+                            // Le navigateur ouvrira le lien normalement
+                        }}
                     >
                         {display}
                     </a>
@@ -358,31 +371,35 @@ const App = () => {
                     color: #f6e05e;
                 }
 
+                /* Style des liens amélioré */
                 .link-anchor {
                     font-size: 14px;
                     font-weight: 600;
                     text-decoration: none;
                     color: white;
                     background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
-                    padding: 10px 14px;
-                    border-radius: 8px;
+                    padding: 12px 16px;
+                    border-radius: 10px;
                     display: block;
-                    margin: 8px 0;
+                    margin: 10px 0;
                     text-align: center;
-                    min-height: 40px;
+                    min-height: 44px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     transition: all 0.3s ease;
-                    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
+                    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+                    border: 2px solid transparent;
+                    cursor: pointer;
                 }
 
                 .link-anchor:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.4);
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(56, 161, 105, 0.5);
+                    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
                 }
 
-                /* CORRECTION : Input area avec texte visible */
+                /* Input area avec texte visible */
                 .input-form {
                     padding: 15px;
                     border-top: 1px solid #4a5568;
@@ -397,8 +414,8 @@ const App = () => {
                     padding: 14px 16px;
                     border-radius: 12px;
                     border: 1px solid #4a5568;
-                    background: #ffffff; /* Fond blanc pour voir le texte */
-                    color: #2d3748; /* Texte foncé pour contraste */
+                    background: #ffffff;
+                    color: #2d3748;
                     font-size: 16px;
                     min-height: 50px;
                     -webkit-appearance: none;
@@ -413,7 +430,7 @@ const App = () => {
                 }
 
                 .chat-input::placeholder {
-                    color: #718096; /* Placeholder gris */
+                    color: #718096;
                 }
 
                 .chat-button {
@@ -680,7 +697,7 @@ const App = () => {
                     </div>
                 </div>
 
-                {/* Bannières 1xBet et MelBet avec nouveaux dégradés */}
+                {/* Bannières 1xBet et MelBet */}
                 <div className="banner-container">
                     <a href={AFFILIATE_LINK} target="_blank" rel="noopener noreferrer" className="bet-banner bet-banner-1xbet">
                         🎰 1xBet
@@ -710,7 +727,7 @@ const App = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Zone de Saisie - MAINTENANT VISIBLE */}
+                {/* Zone de Saisie */}
                 <form onSubmit={handleSend} className="input-form">
                     <input
                         type="text"

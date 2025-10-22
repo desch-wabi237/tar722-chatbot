@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Définitions et Constantes Globales ---
 const PROMO_CODE = "TAR72";
-const BOT_NAME = "TAR72-Bot";
+const BOT_NAME = "TAR72pronosetique";
 
 // Liens affiliés et sociaux - TES LIENS VALIDES
 const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";

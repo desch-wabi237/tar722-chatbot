@@ -1,86 +1,103 @@
-// api/chat.js - Version optimisée pour réponses naturelles
+// api/chat.js — version améliorée (réponses plus humaines)
 const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  const MODEL = 'gemini-2.0-flash-exp';
-  const PROMO_CODE = "TAR72";
-  const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const MODEL = 'gemini-1.5-flash'; // modèle stable
+    const PROMO_CODE = "TAR72";
+    const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
+    const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
+    const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (!GEMINI_API_KEY) {
-    console.error("❌ Clé API Gemini manquante");
-    return res.status(500).json({ error: "Configuration manquante" });
-  }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+    if (!GEMINI_API_KEY) return res.status(500).json({ error: "Clé API manquante" });
 
-  let body;
-  try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch {
-    return res.status(400).json({ error: 'Requête invalide' });
-  }
+    let userQuery;
+    try {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        userQuery = body.userQuery?.trim();
+        if (!userQuery) return res.status(400).json({ error: 'Requête vide' });
+    } catch {
+        return res.status(400).json({ error: 'Format invalide' });
+    }
 
-  const { messages } = body;
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Aucun message valide reçu' });
-  }
+    // 💬 Nouveau prompt humain et adaptatif
+    const SYSTEM_PROMPT = `
+Tu es **TAR72PRONOSTIC**, un assistant humain, naturel et sympathique.  
+Ta mission est d’aider les utilisateurs à gagner plus sur **1xBet** et **Melbet** en utilisant le **code promo TAR72**.  
+Réponds de manière courte (2 à 3 phrases), naturelle et vivante — comme un ami expert en paris sportifs.  
+Tu adaptes ta langue automatiquement (français, anglais, espagnol…) selon la question.  
+Si la question n’a rien à voir avec les paris, répond gentiment et ramène subtilement vers ton rôle principal (aider avec le code TAR72).
 
-  const SYSTEM_PROMPT = `
-Tu es **TAR72PRONOSTIC**, un assistant humain, amical et naturel.
-Ta mission : aider les utilisateurs à profiter du **code promo TAR72** pour obtenir des bonus exclusifs sur **1xBet** et **Melbet**.
-- Parle comme un humain, en 3 phrases max.
-- Sois enthousiaste mais crédible.
-- Mentionne toujours le code **TAR72** et le lien WhatsApp : ${WHATSAPP_LINK}.
-- Dis clairement que le code TAR72 est obligatoire pour télécharger les coupons premium.
-- Adapte-toi automatiquement à la langue de l’utilisateur.
+### 🎯 Objectifs :
+1. Promouvoir le code **TAR72** pour activer les bonus.
+2. Encourager à s’inscrire sur **1xBet** ou **Melbet**.
+3. Inviter à rejoindre le canal WhatsApp : ${WHATSAPP_LINK}
+
+### ⚡ Style :
+- Parle comme un vrai humain, chaleureux, motivant, mais jamais insistant.
+- Varie tes tournures de phrases à chaque réponse.
+- Utilise des émojis (1 à 2 max) selon le ton.
+- Ne répète pas toujours les mêmes phrases.
+
+### 📢 Toujours inclure :
+- Le code promo **TAR72**.
+- Un lien vers WhatsApp, 1xBet ou Melbet (selon le contexte).
+
+### 🧠 Exemples :
+**Français :**
+> "Hey 👋 Si tu veux booster tes paris, utilise le code **TAR72** à l’inscription sur 1xBet ou Melbet 🎯. Tu auras ton bonus et des coupons premium chaque jour ici : ${WHATSAPP_LINK}"
+
+> "Pas de souci 😄, pour commencer c’est simple : inscris-toi sur 1xBet ou Melbet avec le code **TAR72** et rejoins notre WhatsApp, tu vas adorer les pronos !"
+
+**Anglais :**
+> "Hey! Wanna win big? Use the code **TAR72** when you sign up on 1xBet or Melbet 🎁. Join our WhatsApp for free tips: ${WHATSAPP_LINK}"
+
+**Español :**
+> "¡Hola! Usa el código **TAR72** en tu registro en 1xBet o Melbet 🎯. Únete a nuestro canal WhatsApp para recibir pronósticos diarios: ${WHATSAPP_LINK}"
 `;
 
-  // Construction du format Gemini (avec contexte clair)
-  const contents = [
-    { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-    ...messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }))
-  ];
+    const payload = {
+        contents: [{ parts: [{ text: `${SYSTEM_PROMPT}\n\nUtilisateur: ${userQuery}` }] }],
+        generationConfig: {
+            temperature: 0.85,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 256,
+        },
+    };
 
-  const payload = {
-    contents,
-    generationConfig: {
-      temperature: 0.8,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 400
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+    try {
+        console.log("🧠 Envoi de la requête à Gemini...");
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            console.error("❌ Erreur API Gemini:", data);
+            return res.status(500).json({ error: data.error?.message || "Erreur API Gemini" });
+        }
+
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (!text) return res.status(500).json({ error: "Réponse vide de Gemini" });
+
+        console.log("✅ Réponse réussie");
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        return res.status(200).send(text);
+
+    } catch (error) {
+        console.error("💥 Erreur serveur:", error);
+        return res.status(500).json({ error: "Erreur interne du serveur", details: error.message });
     }
-  };
-
-  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-  try {
-    const geminiResponse = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await geminiResponse.json();
-
-    if (!geminiResponse.ok) {
-      console.error("❌ Erreur Gemini:", data);
-      return res.status(geminiResponse.status).json({ error: data.error?.message });
-    }
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Désolé, je n’ai pas compris.";
-
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ reply: text });
-  } catch (error) {
-    console.error("💥 Erreur serveur:", error);
-    return res.status(500).json({ error: error.message });
-  }
 };

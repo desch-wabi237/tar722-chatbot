@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    const MODEL = 'gemini-1.5-flash'; // modèle stable
+    const MODEL = 'gemini-2.0-flash'; // modèle stable
     const PROMO_CODE = "TAR72";
     const AFFILIATE_LINK = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
     const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
